@@ -33,7 +33,7 @@ This package implements T14 and the surrounding theorem family:
 ## Quickstart
 
 ```bash
-git clone https://github.com/[username]/qse
+git clone https://github.com/Ozgurooozer/qse
 cd qse
 pip install numpy          # only dependency
 python quick_proofs.py     # verify all 11 theorems (~10 seconds)
