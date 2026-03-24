@@ -5,8 +5,8 @@
 \usepackage[T1]{fontenc}
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{mathtools}
-\usepackage{bbm}          % \mathbbm{1}
-\usepackage{physics}      % \ket, \bra, \tr, etc.
+\usepackage{bbm}
+\usepackage{physics}
 \usepackage{hyperref}
 \usepackage{cleveref}
 \usepackage{microtype}
@@ -34,21 +34,21 @@
 \newcommand{\C}{\mathbb{C}}
 \newcommand{\HS}{\mathcal{H}}
 \newcommand{\rk}{\operatorname{rank}_{\F_2}}
-\newcommand{\Hbin}{H}           % Shannon entropy
-\newcommand{\VNE}{S}            % von Neumann entropy
+\newcommand{\Hbin}{H}
+\newcommand{\VNE}{S}
 \newcommand{\diag}{\operatorname{diag}}
 \newcommand{\supp}{\operatorname{supp}}
-\DeclareMathOperator{\wt}{wt}   % Hamming weight
+\DeclareMathOperator{\wt}{wt}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \title{%
   \textbf{Quantum Stabilizer Entropy:}\\
   Analytic von Neumann Entropy for CNOT-Based Circuits\\[0.5em]
-  \large via Walsh–Hadamard Transforms and $\F_2$ Linear Algebra
+  \large via Walsh--Hadamard Transforms and $\F_2$ Linear Algebra
 }
 
 \author{
-  Özgür Özer\\
+  \"Ozg\"ur \"Ozer\\
   \small \texttt{[email]}
 }
 
@@ -59,21 +59,29 @@
 
 % ─────────────────────────────────────────────────────────────────────────────
 \begin{abstract}
-We develop an analytic framework—\emph{Quantum Stabilizer Entropy} (QSE)—for
-computing the bipartite von Neumann entropy of pure states produced by CNOT
-circuits acting on product input states.  Central to the framework is
-\textbf{Theorem~14 (T14)}, which expresses $\VNE(B)$ as the Shannon entropy of
-a probability distribution computed by a Walsh–Hadamard transform over $\F_2$.
+We develop an analytic framework---\emph{Quantum Stabilizer Entropy} (QSE)---for
+computing the bipartite von Neumann entropy of pure states produced by
+\emph{unidirectional} CNOT circuits acting on product input states.
+Central to the framework is \textbf{Theorem~14 (T14)}, which expresses
+$\VNE(B)$ as the Shannon entropy of a probability distribution computed by a
+Walsh--Hadamard transform over $\F_2$.  The key novelty is the
+\emph{continuous} dependence on rotation angles $\theta_i$: for pure
+stabilizer states ($\theta_i = \pi/2$) the entropy collapses to the
+$\F_2$-rank of the connectivity matrix $M$, recovering the known rank formula;
+T14 extends this to the full continuous-parameter regime.
+
 From T14 we derive:
 \begin{enumerate}
   \item[(T-RANK)] $\VNE(B) \leq \rk(M)$ for all rotation angles;
   \item[(T-OPT)]  equality at $\theta_i = \pi/2$;
-  \item[(T15A)]   multi-layer composition collapses to $M_{\text{eff}} = \bigoplus_k M_k$;
+  \item[(T15A)]   multi-layer composition collapses to $M_{\text{eff}} = \bigoplus_k M_k$
+                  \emph{(unidirectional layers only)};
   \item[(T17)]    extension to arbitrary pure states on subsystem $A$;
   \item[(T18)]    period-2 entropy oscillation under repeated application;
-  \item[(T20)]    a bidirectional CNOT circuit satisfying $U^3 = I$ with period-3 entropy.
+  \item[(T20)]    a bidirectional CNOT circuit satisfying $U^3 = I$ with
+                  period-3 entropy (numerically verified).
 \end{enumerate}
-All results are numerically verified against exact state-vector simulation;
+All results are verified against exact state-vector simulation;
 the accompanying open-source library reproduces every theorem in under
 15 seconds on commodity hardware.
 \end{abstract}
@@ -87,30 +95,106 @@ the accompanying open-source library reproduces every theorem in under
 
 Understanding how entanglement builds up in quantum circuits is a central
 problem in quantum information theory, quantum many-body physics, and
-quantum computing.  For \emph{Clifford} circuits—those built entirely from
-CNOT, Hadamard, and phase gates—stabiliser formalism gives an efficient
+quantum computing.  For \emph{Clifford} circuits---those built entirely from
+CNOT, Hadamard, and phase gates---stabiliser formalism gives an efficient
 classical description~\cite{gottesman1997stabilizer,aaronson2004improved}.
-However, the analytic dependence of the von Neumann entropy on continuous
-parameters such as rotation angles has received comparatively little
-systematic treatment.
+In particular, the bipartite von Neumann entropy of any stabilizer state is
+determined by the $\F_2$-rank of a submatrix of the stabilizer
+tableau~\cite{audenaert2005entanglement,fattal2004entanglement}.
 
-In this work we focus on a canonical family of circuits: product
-$R_x(\theta_i)$ states on subsystem $A$ coupled to $\ket{0}^{\otimes n_B}$ on
-subsystem $B$ via a layer of CNOT gates encoded by a binary matrix $M$.
-We show that the resulting von Neumann entropy $\VNE(B)$ admits a
-\emph{closed-form expression} in terms of $M$ and $\{\theta_i\}$, obtained
-via a Walsh–Hadamard transform over $\F_2$ (\cref{sec:t14}).
+However, the analytic dependence of the von Neumann entropy on
+\emph{continuous} parameters such as rotation angles has received
+comparatively little systematic treatment.  The circuit class studied here---
+product $R_x(\theta_i)$ states on subsystem $A$ coupled to
+$\ket{0}^{\otimes n_B}$ on subsystem $B$ via a unidirectional CNOT layer---is
+\emph{not} purely Clifford: the $R_x(\theta)$ rotations are Clifford only at
+$\theta \in \{0, \pi/2, \pi, 3\pi/2\}$.  This is the key distinction from
+the stabilizer literature.  The T14 formula gives the \emph{exact} entropy for
+all $\theta$, interpolating continuously between the product state ($\theta=0$,
+$\VNE=0$) and the maximally entangled stabilizer state ($\theta=\pi/2$,
+$\VNE=\rk(M)$).
 
-The key insight is that the partial trace of the output state has a diagonal
-density matrix in the computational basis, with eigenvalues expressible as
-characters of the additive group $\F_2^{n_B}$.  The rank of $M$ over $\F_2$
-then plays the role of the \emph{maximum achievable entropy}
-(\cref{sec:rank_bound}), and the formula generalises naturally to mixed
-inputs (\cref{sec:mixed}), multi-layer circuits (\cref{sec:layers}), and
-bidirectional interaction graphs (\cref{sec:bidir}).
+\paragraph{Scope and limitations.}
+The framework applies specifically to circuits where:
+(i) all entangling gates are CNOT gates directed from $A$ to $B$
+(unidirectional);
+(ii) subsystem $B$ is initialised in $\ket{0}^{\otimes n_B}$;
+(iii) subsystem $A$ carries a product state $\bigotimes_i R_x(\theta_i)\ket{0}$.
+Circuits with Hadamard or phase gates on $B$, entangling gates beyond CNOT,
+non-product inputs on $B$, or bidirectional CNOT layers (where $B$ feeds back
+into $A$) fall outside the T14 framework.  The multi-layer composition theorem
+(T15A) requires all layers to be unidirectional; the bidirectional case
+produces qualitatively different dynamics (T20).  Extending the framework to
+general Clifford circuits remains an open problem.
 
-All results are verified by exact state-vector simulation; see
-\cref{sec:implementation} for the open-source implementation.
+\paragraph{Organisation.}
+\Cref{sec:related} surveys related work.
+\Cref{sec:prelim} fixes notation and the circuit setup.
+\Cref{sec:t14} states and proves T14.
+\Cref{sec:rank_bound} derives the rank bound and optimality.
+\Cref{sec:layers} treats multi-layer composition.
+\Cref{sec:pure,sec:mixed} extend T14 to general inputs.
+\Cref{sec:cz,sec:mi} cover the CZ equivalence and mutual information.
+\Cref{sec:bidir} analyses the bidirectional circuit.
+\Cref{sec:implementation} describes the numerical implementation.
+\Cref{sec:discussion} discusses extensions and open problems.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Entanglement of stabilizer states.}
+The connection between $\F_2$ linear algebra and bipartite entanglement entropy
+is well established for \emph{stabilizer states}.  Fattal et
+al.~\cite{fattal2004entanglement} showed that the entanglement entropy of a
+stabilizer state across any bipartition equals the $\F_2$-rank of a submatrix
+of the stabilizer generators.  Audenaert and
+Plenio~\cite{audenaert2005entanglement} proved that every bipartite mixed
+stabilizer state is locally equivalent to a direct product of maximally
+entangled pairs and a separable state, with all entanglement measures
+efficiently computable from the stabilizer group.  These results establish the
+rank formula $\VNE = \rk(M)$ at $\theta = \pi/2$, which T-OPT recovers as a
+special case.  The contribution of T14 is to extend this to the
+\emph{continuous-parameter} regime: for $\theta \neq \pi/2$ the state is no
+longer a stabilizer state, and the rank formula no longer applies.  T14
+provides the exact entropy for all $\theta$ via a Walsh--Hadamard transform.
+
+\paragraph{CNOT circuit structure and entanglement.}
+Patel, Markov, and Hayes~\cite{patel2008optimal} studied the synthesis of
+linear reversible circuits (CNOT-only) over $\F_2$, establishing the
+connection between CNOT circuit composition and $\F_2$ matrix multiplication.
+Bataille~\cite{bataille2022cnot} studied entanglement creation by CNOT
+circuits acting on factorized states, characterising the group structure of
+CNOT circuits and the conditions under which different entanglement classes
+arise.  Our T15A (XOR composition of unidirectional layers) is consistent with
+this picture: the effective matrix $M_{\mathrm{eff}} = \bigoplus_k M_k$ is
+precisely the $\F_2$ sum of the layer matrices, and the period-2 corollary
+(T18) follows from CNOT self-inverseness.  Bataille's work focuses on the
+group-theoretic structure of CNOT circuits; T14 complements this by providing
+an analytic entropy formula for the continuous-angle regime.
+
+\paragraph{Entanglement in noisy stabilizer states.}
+Goodenough et al.~\cite{goodenough2024noisy} showed that the spectrum of the
+reduced state of a noisy stabilizer state can be expressed in terms of
+properties of an associated stabilizer code, connecting entanglement entropy
+to syndrome entropy.  This is complementary to our noise model: while
+Goodenough et al.\ study Pauli noise on stabilizer states, our IBM hardware
+experiments (\cref{sec:implementation}) use a linear noise model
+$\VNE_{\mathrm{noisy}} = \eta \cdot \VNE_{\mathrm{ideal}}$ calibrated on
+\texttt{ibm\_fez}, with $\eta \approx 0.849$.
+
+\paragraph{Parameterised quantum circuits.}
+The broader context of analytic entropy formulas for parameterised circuits
+has received growing attention in the variational quantum algorithms
+literature~\cite{cerezo2021variational}.  T14 provides an exact closed-form
+formula for a specific but natural circuit family, which may be useful as a
+benchmark or regulariser in variational settings.
+
+\paragraph{Novelty summary.}
+The T14 formula is, to our knowledge, the first closed-form analytic expression
+for the von Neumann entropy of a CNOT circuit with continuous rotation angles.
+The rank formula (T-OPT) is a known special case; the continuous interpolation
+is new.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Preliminaries}
@@ -140,8 +224,9 @@ $n_A + n_B$ qubits total, prepared in
 
 where $R_x(\theta)\ket{0} = \cos(\theta/2)\ket{0} - i\sin(\theta/2)\ket{1}$.
 
-A CNOT layer is then applied: for each pair $(i,j)$ with $M_{j,i}=1$, the
-gate $\mathrm{CNOT}(A_i \to B_j)$ is applied.  The output state is
+A \emph{unidirectional} CNOT layer is then applied: for each pair $(i,j)$ with
+$M_{j,i}=1$, the gate $\mathrm{CNOT}(A_i \to B_j)$ is applied.  All gates go
+from $A$ to $B$; no gate modifies any $A$-qubit.  The output state is
 
 \begin{equation}
   \ket{\psi} \;=\; U_M \,\ket{\psi_{\mathrm{in}}},
@@ -157,10 +242,10 @@ We study the von Neumann entropy of subsystem $B$:
 \end{equation}
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{The Walsh–Hadamard Formula (Theorem T14)}
+\section{The Walsh--Hadamard Formula (Theorem T14)}
 \label{sec:t14}
 
-\begin{theorem}[T14 — Walsh–Hadamard entropy formula]
+\begin{theorem}[T14 --- Walsh--Hadamard entropy formula]
 \label{thm:t14}
 Let $\ket{\psi}$ be the output of circuit~\eqref{eq:circuit}.  Define,
 for each $b \in \{0,1\}^{n_B}$,
@@ -189,35 +274,44 @@ Then $p_b \geq 0$, $\sum_b p_b = 1$, and
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-The output state can be written in the Schmidt basis as
+Since all CNOT gates go from $A$ to $B$, the $A$-qubits are never modified
+by $U_M$.  Each computational-basis component $\ket{x}_A$ of the input maps
+deterministically to $\ket{Mx \bmod 2}_B$, so the output state is
 \[
   \ket{\psi} = \sum_{x \in \{0,1\}^{n_A}} \alpha_x \ket{x}_A \ket{Mx \bmod 2}_B,
 \]
 where $\alpha_x = \prod_{i=0}^{n_A-1}[(\cos\tfrac{\theta_i}{2})^{1-x_i}(-i\sin\tfrac{\theta_i}{2})^{x_i}]$.
 
-The reduced density matrix $\rho_B$ is diagonal in the computational basis
-because $\alpha_x$ and $\alpha_{x'}$ contribute to the same $B$-basis state iff
-$Mx = Mx'$ over $\F_2$, i.e.\ $M(x \oplus x') = 0$.  The diagonal entries are
+The reduced density matrix $\rho_B$ is diagonal in the computational basis:
 \[
   (\rho_B)_{bb} = \sum_{x:\, Mx = b} |\alpha_x|^2.
 \]
-A Walsh–Hadamard transform over $\{0,1\}^{n_B}$ then converts the eigenvalues
-into the form~\eqref{eq:t14_probs}--\eqref{eq:phi}, with $\varphi(s)$
-capturing the Fourier characters.  Since all eigenvalues are non-negative and
-sum to one, the von Neumann entropy equals the Shannon entropy of $\{p_b\}$.
+(Off-diagonal terms $\bra{b}\rho_B\ket{b'}$ with $b \neq b'$ vanish because
+they require $\alpha_x \overline{\alpha_{x'}}$ with $Mx = b \neq b' = Mx'$,
+and the $A$-basis states $\ket{x}, \ket{x'}$ are orthogonal.)
+
+A Walsh--Hadamard transform over $\{0,1\}^{n_B}$ then converts the diagonal
+entries into the form~\eqref{eq:t14_probs}--\eqref{eq:phi}, with $\varphi(s)$
+capturing the Fourier characters of the group $\F_2^{n_B}$.  Since all
+eigenvalues are non-negative and sum to one, the von Neumann entropy equals
+the Shannon entropy of $\{p_b\}$.
 \end{proof}
 
-\begin{remark}
-The Walsh–Hadamard transform makes T14 efficiently computable in
-$O(2^{n_B} \cdot n_B)$ time, which is exponentially faster than
-full state-vector simulation for small $n_B$.
+\begin{remark}[Computational complexity]
+\label{rem:complexity}
+The Walsh--Hadamard transform makes T14 computable in $O(2^{n_B} \cdot n_B)$
+time, compared to $O(2^{n_A + n_B})$ for full state-vector simulation.  This
+gives an exponential speedup when $n_B \ll n_A$.  For balanced partitions
+($n_A \approx n_B$), both costs are exponential in the total qubit count and
+there is no asymptotic advantage; the formula remains useful as an exact
+analytic expression.
 \end{remark}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Rank Bound and Optimality}
 \label{sec:rank_bound}
 
-\begin{theorem}[T-RANK — entropy bounded by $\F_2$ rank]
+\begin{theorem}[T-RANK --- entropy bounded by $\F_2$ rank]
 \label{thm:trank}
 For all $\theta \in \mathbb{R}^{n_A}$ and all $M \in \F_2^{n_B \times n_A}$,
 
@@ -234,7 +328,7 @@ at most $2^{\rk(M)}$ non-zero eigenvalues, giving
 $\VNE(B) \leq \log_2 2^{\rk(M)} = \rk(M)$.
 \end{proof}
 
-\begin{theorem}[T-OPT — maximum entropy at $\theta = \pi/2$]
+\begin{theorem}[T-OPT --- maximum entropy at $\theta = \pi/2$]
 \label{thm:topt}
 Setting $\theta_i = \pi/2$ for all $i$ yields
 
@@ -252,14 +346,23 @@ each appearing $2^{\rk(M)}$ times.  Hence $\rho_B$ is the maximally mixed
 state on $\operatorname{Im}(M)$ and $\VNE(B) = \rk(M)$.
 \end{proof}
 
+\begin{remark}
+T-OPT recovers the known stabilizer result: at $\theta = \pi/2$ the input
+state $R_x(\pi/2)\ket{0} = \frac{1}{\sqrt{2}}(\ket{0}-i\ket{1})$ is (up to
+a global phase) the $-Y$ eigenstate, and the output is a stabilizer state
+whose entropy equals the $\F_2$-rank of the generator
+matrix~\cite{fattal2004entanglement,audenaert2005entanglement}.
+\end{remark}
+
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Multi-Layer Composition (Theorem T15A)}
 \label{sec:layers}
 
-\begin{theorem}[T15A — XOR composition of layers]
+\begin{theorem}[T15A --- XOR composition of unidirectional layers]
 \label{thm:t15a}
 Let $M_1, \dotsc, M_k \in \F_2^{n_B \times n_A}$ be the connectivity
-matrices of $k$ sequential CNOT layers applied to the same input state.
+matrices of $k$ sequential \emph{unidirectional} CNOT layers (all gates
+directed $A \to B$) applied to the same input state~\eqref{eq:product_input}.
 Then
 
 \begin{equation}
@@ -271,13 +374,23 @@ Then
 \end{theorem}
 
 \begin{proof}
-CNOT gates are self-inverse, so two CNOT$(A_i \to B_j)$ gates cancel.
-The composition of $k$ layers is therefore equivalent to a single layer
-with matrix $M_{\mathrm{eff}} = (M_1 + \cdots + M_k) \bmod 2$.
+Because all gates are directed $A \to B$, the $A$-qubits are never modified
+by any layer.  The net effect on $B$-qubit $j$ from $A$-qubit $i$ is a CNOT
+applied an odd or even number of times; since CNOT is self-inverse, the
+effective connectivity is $(M_1 + \cdots + M_k) \bmod 2 = M_{\mathrm{eff}}$.
 Applying T14 to this effective matrix gives~\eqref{eq:t15a}.
 \end{proof}
 
-\begin{corollary}[T18 — period-2 entropy sequence]
+\begin{remark}[Unidirectionality is essential]
+\label{rem:unidirectional}
+T15A requires all layers to be unidirectional ($A \to B$).  If any layer
+includes a gate directed $B \to A$, the $A$-qubits are modified and the
+XOR reduction no longer holds.  The bidirectional circuit of \cref{sec:bidir}
+(T20) illustrates this: the composition $U_{\mathrm{bwd}} \circ U_{\mathrm{fwd}}$
+has period 3, not 2, precisely because the backward layer modifies $A$.
+\end{remark}
+
+\begin{corollary}[T18 --- period-2 entropy sequence]
 \label{cor:t18}
 If all layers use the same matrix $M$, the entropy sequence satisfies
 $\VNE^{(k)} = \VNE^{(k+2)}$ for all $k \geq 1$.
@@ -292,7 +405,7 @@ $M_{\mathrm{eff}}(k) = k \cdot M \bmod 2$, which alternates between $M$
 \section{Extension to General Pure States (Theorem T17)}
 \label{sec:pure}
 
-\begin{theorem}[T17 — arbitrary pure input on $A$]
+\begin{theorem}[T17 --- arbitrary pure input on $A$]
 \label{thm:t17}
 Let $\ket{\psi_A} = \sum_x \alpha_x \ket{x}$ be an arbitrary normalised
 pure state on $A$.  After applying $U_M$,
@@ -313,10 +426,11 @@ Moreover, $\VNE(B) = 0$ (i.e.\ $B$ is \emph{blind} to $A$) if and only if
 \end{theorem}
 
 \begin{proof}
-Since $\ket{\psi_B} = \ket{0}^{\otimes n_B}$, each computational-basis
-component $\alpha_x\ket{x}_A$ maps deterministically to $\ket{Mx}_B$.
-The output is $\sum_x \alpha_x \ket{x}_A\ket{Mx}_B$; tracing out $A$ gives
-$\rho_B = \sum_b q_b \ketbra{b}{b}$ with $q_b$ as in~\eqref{eq:t17}.
+Since $\ket{\psi_B} = \ket{0}^{\otimes n_B}$ and all gates go $A \to B$,
+each computational-basis component $\alpha_x\ket{x}_A$ maps deterministically
+to $\ket{Mx}_B$.  The output is $\sum_x \alpha_x \ket{x}_A\ket{Mx}_B$;
+tracing out $A$ gives $\rho_B = \sum_b q_b \ketbra{b}{b}$ with $q_b$
+as in~\eqref{eq:t17}.
 
 For the blindness criterion: $\VNE(B) = 0$ iff $q_b \in \{0,1\}$ for all $b$,
 i.e.\ the map $x \mapsto Mx$ is constant on $\supp(\psi_A)$, which is
@@ -327,10 +441,10 @@ equivalent to $M(x \oplus x') = 0$ for all pairs in the support.
 \section{Extension to Mixed Input States (Theorem T-EVRENSEL)}
 \label{sec:mixed}
 
-\begin{theorem}[T-EVRENSEL — mixed input $\rho_A$]
+\begin{theorem}[T-EVRENSEL --- diagonal mixed input $\rho_A$]
 \label{thm:tevrensel}
-If $A$ is in a mixed state $\rho_A = \sum_x d_x \ketbra{x}{x}$ (diagonal in
-the computational basis), the entropy of $B$ after $U_M$ is
+If $A$ is in a mixed state $\rho_A = \sum_x d_x \ketbra{x}{x}$ diagonal in
+the computational basis, the entropy of $B$ after $U_M$ is
 
 \begin{equation}
   \VNE(B) \;=\; \Hbin\!\Bigl(\bigl\{r_b\bigr\}\Bigr),
@@ -338,19 +452,23 @@ the computational basis), the entropy of $B$ after $U_M$ is
   r_b = \sum_{x:\, Mx = b} d_x.
   \label{eq:tevrensel}
 \end{equation}
-
-In particular, \emph{off-diagonal} coherences of $\rho_A$ do not affect
-$\VNE(B)$.
 \end{theorem}
 
 \begin{proof}
-Express $\rho_A = \sum_x d_x \ketbra{x}{x}$.  By linearity,
-\[
-  \rho_{AB} = \sum_x d_x \, U_M \bigl(\ketbra{x}{x} \otimes \ketbra{0}{0}\bigr) U_M^\dagger.
-\]
-Tracing out $A$ and using the diagonal structure of $U_M$ in the $A$-basis
-gives $\rho_B = \sum_b r_b \ketbra{b}{b}$ with $r_b$ as in~\eqref{eq:tevrensel}.
+By linearity, $\rho_{AB} = \sum_x d_x \, U_M (\ketbra{x}{x} \otimes \ketbra{0}{0}) U_M^\dagger$.
+Tracing out $A$ gives $\rho_B = \sum_b r_b \ketbra{b}{b}$.
 \end{proof}
+
+\begin{remark}
+T-EVRENSEL is a direct consequence of the circuit structure: since CNOT gates
+only permute computational-basis states, only the diagonal of $\rho_A$
+propagates to $B$.  Off-diagonal coherences of $\rho_A$ do not affect $\rho_B$
+because the $A$-basis states $\ket{x}$ and $\ket{x'}$ with $x \neq x'$ are
+mapped to orthogonal $B$-states (or the same $B$-state, in which case the
+cross-term vanishes upon tracing out $A$).  This is immediate from the
+computational-basis structure of CNOT and is essentially a restatement of T17
+for the case where $\ket{\psi_A}$ is replaced by a classical mixture.
+\end{remark}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{CZ-Gate Equivalence (CZ-T14)}
@@ -380,7 +498,7 @@ change $\rho_B$'s spectrum, hence $\VNE(B)$ is preserved.
 \section{Mutual Information and Subadditivity (Theorem T-MI)}
 \label{sec:mi}
 
-\begin{theorem}[T-MI — mutual information non-negativity]
+\begin{theorem}[T-MI --- mutual information non-negativity]
 \label{thm:tmi}
 For any bipartition $B = B_1 \cup B_2$ (corresponding to a row partition of
 $M$ into $M_1, M_2$),
@@ -392,7 +510,7 @@ $M$ into $M_1, M_2$),
 \end{theorem}
 
 \begin{proof}
-This is an immediate consequence of the \emph{strong subadditivity} of
+This is an immediate consequence of the strong subadditivity of
 von Neumann entropy~\cite{lieb1973proof}.
 \end{proof}
 
@@ -406,24 +524,31 @@ by a \emph{backward} layer
 $U_{\mathrm{bwd}} = \mathrm{CNOT}(B_0,A_0)\,\mathrm{CNOT}(B_1,A_1)$.
 Define $U = U_{\mathrm{bwd}}\, U_{\mathrm{fwd}}$.
 
-\begin{theorem}[T20 — period-3 dynamics]
+Note that $U$ is \emph{not} covered by T15A: the backward layer modifies the
+$A$-qubits, violating the unidirectionality assumption of \cref{thm:t15a}.
+
+\begin{proposition}[T20 --- period-3 dynamics, numerically verified]
 \label{thm:t20}
 The operator $U$ satisfies $U^3 = I_{16}$ but $U^2 \neq I_{16}$.
 Consequently, the entropy sequence $\VNE^{(k)}(B)$ obeys
 $\VNE^{(k)} = \VNE^{(k+3)}$ for all $k \geq 1$, with minimal period $3$.
-\end{theorem}
+\end{proposition}
 
-\begin{proof}[Proof (matrix verification)]
-Write each CNOT as its $16 \times 16$ permutation matrix.  Direct computation
-(verified numerically to machine precision) gives $U^3 = I_{16}$.  The
-inequality $U^2 \neq I_{16}$ confirms that $3$ is the minimal period.
+\begin{proof}[Verification]
+Write each CNOT as its $16 \times 16$ permutation matrix over $\{0,1\}^4$.
+Direct computation gives $U^3 = I_{16}$ to machine precision
+($\max|U^3 - I| < 10^{-13}$), and $\max|U^2 - I| > 10^{-6}$, confirming
+minimal period 3.  See \cref{tab:results} and the accompanying code.
 \end{proof}
 
-\begin{remark}
-The period-3 orbit $\{\VNE^{(1)}, \VNE^{(2)}, \VNE^{(3)}\} = \{S_1, S_2, S_1\}$
-(with $S_2 \neq S_1$ generically) exhibits richer dynamics than the period-2
-case of \cref{cor:t18}, arising from the non-trivial group structure
-$\langle U \rangle \cong \Z/3\Z$.
+\begin{remark}[Analytic structure]
+The period-3 result can be understood from the group structure of the
+bidirectional circuit.  The composition $U = U_{\mathrm{bwd}} \circ U_{\mathrm{fwd}}$
+generates a cyclic group $\langle U \rangle \cong \Z/3\Z$.  An analytic proof
+would show that the minimal polynomial of $U$ over $\F_2$ divides $x^3 - 1 =
+(x-1)(x^2+x+1)$, and that $U \neq I$ rules out the trivial factor.  We leave
+a complete algebraic proof as an open problem; the numerical verification
+provides strong evidence for the result.
 \end{remark}
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -433,7 +558,7 @@ $\langle U \rangle \cong \Z/3\Z$.
 All theorems are verified by the \texttt{qse} Python library, available at:
 
 \begin{center}
-\url{https://github.com/[username]/qse}
+\url{https://github.com/Ozgurooozer/qse}
 \end{center}
 
 The library requires only NumPy and can be installed via
@@ -442,7 +567,7 @@ The library requires only NumPy and can be installed via
 $\approx 10$ seconds:
 
 \begin{verbatim}
-  git clone https://github.com/[username]/qse
+  git clone https://github.com/Ozgurooozer/qse
   cd qse
   python quick_proofs.py
 \end{verbatim}
@@ -467,7 +592,7 @@ T-EVRENSEL         & \cref{thm:tevrensel} & 40  & $1.6 \times 10^{-13}$ \\
 T17 pure state     & \cref{thm:t17}       & 50  & $1.5 \times 10^{-13}$ \\
 T17 blindness      & \cref{thm:t17}       & 50  & 50/50 exact           \\
 T18 period-2       & \cref{cor:t18}       & 100 & $0.0 \times 10^{0}$   \\
-T20 $U^3 = I$      & \cref{thm:t20}       & —   & $0.0 \times 10^{0}$   \\
+T20 $U^3 = I$      & \cref{thm:t20}       & ---  & $< 10^{-13}$         \\
 T20 period-3       & \cref{thm:t20}       & 20  & $0.0 \times 10^{0}$   \\
 CZ-T14             & \cref{thm:czt14}     & 30  & $1.0 \times 10^{-13}$ \\
 \bottomrule
@@ -475,6 +600,16 @@ CZ-T14             & \cref{thm:czt14}     & 30  & $1.0 \times 10^{-13}$ \\
 \caption{Numerical verification results (seed 42, tolerance $10^{-10}$).}
 \label{tab:results}
 \end{table}
+
+\subsection{IBM hardware experiments}
+
+The T14 formula was also tested against IBM \texttt{ibm\_fez} hardware using
+quantum state tomography on four circuits (identity, cross, mixed, A0\_both)
+at $\theta = \pi/3$.  A linear noise model $\VNE_{\mathrm{noisy}} = \eta \cdot
+\VNE_{\mathrm{ideal}}$ fits the data with $\eta \approx 0.849$, consistent
+with the gate error rates of the \texttt{ibm\_fez} device.  This provides
+experimental evidence that T14 correctly predicts the ideal entropy, and that
+hardware noise introduces a multiplicative attenuation.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Discussion and Outlook}
@@ -486,17 +621,24 @@ an important class of quantum circuits.  Several extensions are natural:
 \paragraph{Parameterised circuits.}
 The T14 formula is differentiable in $\theta$, making it directly applicable
 to variational quantum algorithms and quantum machine learning where entropy
-is used as a regulariser or objective.
+is used as a regulariser or objective~\cite{cerezo2021variational}.
 
 \paragraph{Non-product inputs.}
-\cref{thm:t17} generalises T14 to arbitrary pure states; a further extension
-to entangled inputs would require computing the $\F_2$-convolution of the
-Schmidt coefficients with the transfer function of $M$.
+\cref{thm:t17} generalises T14 to arbitrary pure states on $A$; a further
+extension to entangled inputs on $B$ would require a different approach, as
+the diagonal structure of $\rho_B$ relies on $B$ starting in $\ket{0}$.
 
 \paragraph{Clifford extensions.}
 Adding Hadamard and phase gates changes the stabiliser group but preserves
 the $\F_2$ linear structure.  A unified Walsh-spectrum formula for general
-Clifford circuits is an open problem.
+Clifford circuits is an open problem.  The gap between the present circuit
+family and general Clifford circuits is substantial: any gate on $B$ before
+the CNOT layer, or any $B \to A$ gate, breaks the unidirectionality assumption.
+
+\paragraph{Analytic proof of T20.}
+As noted in \cref{sec:bidir}, an algebraic proof that $U^3 = I$ for the
+bidirectional circuit---via the minimal polynomial of $U$ over $\F_2$---would
+strengthen the result from a numerically verified proposition to a theorem.
 
 \paragraph{Tensor-network perspective.}
 The period-3 result (T20) suggests a non-trivial group-theoretic structure
@@ -522,6 +664,43 @@ S.~Aaronson and D.~Gottesman,
 \textit{Improved Simulation of Stabilizer Circuits},
 Phys.\ Rev.\ A \textbf{70}, 052328 (2004).
 \href{https://arxiv.org/abs/quant-ph/0406196}{arXiv:quant-ph/0406196}
+
+\bibitem{audenaert2005entanglement}
+K.~M.~R. Audenaert and M.~B. Plenio,
+\textit{Entanglement on Mixed Stabilizer States: Normal Forms and
+Reduction Procedures},
+New J.\ Phys.\ \textbf{7}, 170 (2005).
+\href{https://arxiv.org/abs/quant-ph/0505036}{arXiv:quant-ph/0505036}
+
+\bibitem{fattal2004entanglement}
+D.~Fattal, T.~S. Cubitt, Y.~Yamamoto, S.~Bravyi, and I.~L. Chuang,
+\textit{Entanglement in the Stabilizer Formalism},
+(2004).
+\href{https://arxiv.org/abs/quant-ph/0406168}{arXiv:quant-ph/0406168}
+
+\bibitem{patel2008optimal}
+K.~N. Patel, I.~L. Markov, and J.~P. Hayes,
+\textit{Optimal Synthesis of Linear Reversible Circuits},
+Quantum Inf.\ Comput.\ \textbf{8}(3), 282--294 (2008).
+
+\bibitem{bataille2022cnot}
+M.~Bataille,
+\textit{Quantum Circuits of CNOT Gates: Optimization and Entanglement},
+Quantum Inf.\ Process.\ \textbf{21}, 269 (2022).
+\href{https://doi.org/10.1007/s11128-022-03577-8}{doi:10.1007/s11128-022-03577-8}
+
+\bibitem{goodenough2024noisy}
+K.~Goodenough, S.~Wehner, and N.~Datta,
+\textit{Bipartite Entanglement of Noisy Stabilizer States Through the Lens
+of Stabilizer Codes},
+IEEE Int.\ Symp.\ Inf.\ Theory (ISIT), 2024.
+\href{https://arxiv.org/abs/2406.02427}{arXiv:2406.02427}
+
+\bibitem{cerezo2021variational}
+M.~Cerezo et al.,
+\textit{Variational Quantum Algorithms},
+Nat.\ Rev.\ Phys.\ \textbf{3}, 625--644 (2021).
+\href{https://arxiv.org/abs/2012.09265}{arXiv:2012.09265}
 
 \bibitem{lieb1973proof}
 E.~H. Lieb and M.~B. Ruskai,
