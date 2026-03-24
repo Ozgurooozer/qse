@@ -93,39 +93,52 @@ the accompanying open-source library reproduces every theorem in under
 \section{Introduction}
 \label{sec:intro}
 
-Understanding how entanglement builds up in quantum circuits is a central
-problem in quantum information theory, quantum many-body physics, and
-quantum computing.  For \emph{Clifford} circuits---those built entirely from
-CNOT, Hadamard, and phase gates---stabiliser formalism gives an efficient
-classical description~\cite{gottesman1997stabilizer,aaronson2004improved}.
-In particular, the bipartite von Neumann entropy of any stabilizer state is
-determined by the $\F_2$-rank of a submatrix of the stabilizer
-tableau~\cite{audenaert2005entanglement,fattal2004entanglement}.
+Characterizing how entanglement depends on circuit structure and parameters is
+a central problem in quantum information theory.  For Clifford (stabilizer)
+circuits, entanglement properties are well understood and often reducible to
+linear-algebraic quantities such as rank over $\F_2$~\cite{audenaert2005entanglement,fattal2004entanglement}.
+In contrast, obtaining analytic expressions for entanglement in parameterized
+quantum circuits with continuous gate parameters remains more limited.
 
-However, the analytic dependence of the von Neumann entropy on
-\emph{continuous} parameters such as rotation angles has received
-comparatively little systematic treatment.  The circuit class studied here---
-product $R_x(\theta_i)$ states on subsystem $A$ coupled to
-$\ket{0}^{\otimes n_B}$ on subsystem $B$ via a unidirectional CNOT layer---is
-\emph{not} purely Clifford: the $R_x(\theta)$ rotations are Clifford only at
-$\theta \in \{0, \pi/2, \pi, 3\pi/2\}$.  This is the key distinction from
-the stabilizer literature.  The T14 formula gives the \emph{exact} entropy for
-all $\theta$, interpolating continuously between the product state ($\theta=0$,
-$\VNE=0$) and the maximally entangled stabilizer state ($\theta=\pi/2$,
-$\VNE=\rk(M)$).
+In this work, we consider a restricted class of circuits consisting of product
+input states acted on by layers of unidirectional CNOT gates.  Within this
+setting, we derive an explicit expression for the bipartite von Neumann entropy
+of a subsystem (Theorem~\ref{thm:t14}).  The resulting reduced density matrix
+is diagonal in the computational basis, and its spectrum can be written in
+terms of a Walsh--Hadamard transform over $\F_2$.  This leads to a closed-form
+entropy expression with explicit dependence on the input rotation angles.
+
+Our results recover known rank-based bounds from stabilizer theory in special
+cases, while providing a continuous interpolation away from these points.  We
+also discuss structural properties of the circuit class, including entropy
+bounds in terms of $\F_2$ rank and simple composition rules for multilayer
+circuits under suitable assumptions.
 
 \paragraph{Scope and limitations.}
-The framework applies specifically to circuits where:
-(i) all entangling gates are CNOT gates directed from $A$ to $B$
-(unidirectional);
-(ii) subsystem $B$ is initialised in $\ket{0}^{\otimes n_B}$;
-(iii) subsystem $A$ carries a product state $\bigotimes_i R_x(\theta_i)\ket{0}$.
-Circuits with Hadamard or phase gates on $B$, entangling gates beyond CNOT,
-non-product inputs on $B$, or bidirectional CNOT layers (where $B$ feeds back
-into $A$) fall outside the T14 framework.  The multi-layer composition theorem
-(T15A) requires all layers to be unidirectional; the bidirectional case
-produces qualitatively different dynamics (T20).  Extending the framework to
-general Clifford circuits remains an open problem.
+Our analysis applies to circuits consisting of unidirectional CNOT layers
+($A \to B$) acting on product inputs, with subsystem $B$ initialized in
+$\ket{0}^{\otimes n_B}$.  Circuits involving bidirectional interactions,
+additional Clifford gates on $B$, or entangled inputs on $B$ fall outside this
+framework.  Within this restricted regime, however, the formulas offer a
+tractable way to study parameter-dependent entanglement.  All statements are
+supported by numerical verification to high precision.
+
+\paragraph{Contributions.}
+The main contribution is Theorem~\ref{thm:t14}, which provides a closed-form
+Walsh--Hadamard expression for the bipartite von Neumann entropy in a class of
+parameterized CNOT circuits.  Secondary contributions include rank-based
+entropy bounds (T-RANK, T-OPT), a multi-layer composition rule (T15A), and
+structural results on circuit dynamics (T18, T20).
+
+\paragraph{Relation to prior work.}
+Our results build on the stabilizer formalism, where entanglement is
+characterized by algebraic invariants of binary
+matrices~\cite{audenaert2005entanglement,fattal2004entanglement}.  Unlike
+these discrete results, our formula provides a closed-form expression for the
+continuous dependence of entropy on rotation parameters.  The use of
+Walsh--Hadamard transforms is closely related to Fourier analysis over
+$\F_2^n$, which has appeared in studies of stabilizer entropy and related
+quantities~\cite{bataille2022cnot,goodenough2024noisy}.
 
 \paragraph{Organisation.}
 \Cref{sec:related} surveys related work.
@@ -300,8 +313,7 @@ the Shannon entropy of $\{p_b\}$.
 \begin{remark}[Computational complexity]
 \label{rem:complexity}
 The Walsh--Hadamard transform makes T14 computable in $O(2^{n_B} \cdot n_B)$
-time, compared to $O(2^{n_A + n_B})$ for full state-vector simulation.  This
-gives an exponential speedup when $n_B \ll n_A$.  For balanced partitions
+time, which is advantageous when $n_B \ll n_A$.  For balanced partitions
 ($n_A \approx n_B$), both costs are exponential in the total qubit count and
 there is no asymptotic advantage; the formula remains useful as an exact
 analytic expression.
@@ -374,11 +386,15 @@ Then
 \end{theorem}
 
 \begin{proof}
-Because all gates are directed $A \to B$, the $A$-qubits are never modified
-by any layer.  The net effect on $B$-qubit $j$ from $A$-qubit $i$ is a CNOT
-applied an odd or even number of times; since CNOT is self-inverse, the
-effective connectivity is $(M_1 + \cdots + M_k) \bmod 2 = M_{\mathrm{eff}}$.
-Applying T14 to this effective matrix gives~\eqref{eq:t15a}.
+Since all CNOT gates act unidirectionally from $A$ to $B$, the state of
+subsystem $A$ is unaffected by the circuit.  Therefore, repeated applications
+of the same $\mathrm{CNOT}(A_i \to B_j)$ gate cancel pairwise due to
+self-inverseness.  As a result, the overall action of $k$ layers reduces to a
+single CNOT layer with connectivity matrix
+\[
+  M_{\mathrm{eff}} = \bigoplus_{\ell=1}^{k} M_\ell \pmod{2}.
+\]
+Applying Theorem~\ref{thm:t14} to this effective matrix yields the result.
 \end{proof}
 
 \begin{remark}[Unidirectionality is essential]
@@ -527,28 +543,25 @@ Define $U = U_{\mathrm{bwd}}\, U_{\mathrm{fwd}}$.
 Note that $U$ is \emph{not} covered by T15A: the backward layer modifies the
 $A$-qubits, violating the unidirectionality assumption of \cref{thm:t15a}.
 
-\begin{proposition}[T20 --- period-3 dynamics, numerically verified]
+\begin{proposition}[T20 --- period-3 dynamics]
 \label{thm:t20}
-The operator $U$ satisfies $U^3 = I_{16}$ but $U^2 \neq I_{16}$.
-Consequently, the entropy sequence $\VNE^{(k)}(B)$ obeys
+The operator $U$ satisfies $U^3 = I_{16}$ and generates a cyclic group of
+order $3$.  Consequently, the entropy sequence $\VNE^{(k)}(B)$ obeys
 $\VNE^{(k)} = \VNE^{(k+3)}$ for all $k \geq 1$, with minimal period $3$.
 \end{proposition}
 
 \begin{proof}[Verification]
-Write each CNOT as its $16 \times 16$ permutation matrix over $\{0,1\}^4$.
-Direct computation gives $U^3 = I_{16}$ to machine precision
+Write each CNOT as its $16 \times 16$ permutation matrix.  Explicit matrix
+computation gives $U^3 = I_{16}$ to machine precision
 ($\max|U^3 - I| < 10^{-13}$), and $\max|U^2 - I| > 10^{-6}$, confirming
 minimal period 3.  See \cref{tab:results} and the accompanying code.
 \end{proof}
 
-\begin{remark}[Analytic structure]
-The period-3 result can be understood from the group structure of the
-bidirectional circuit.  The composition $U = U_{\mathrm{bwd}} \circ U_{\mathrm{fwd}}$
-generates a cyclic group $\langle U \rangle \cong \Z/3\Z$.  An analytic proof
-would show that the minimal polynomial of $U$ over $\F_2$ divides $x^3 - 1 =
-(x-1)(x^2+x+1)$, and that $U \neq I$ rules out the trivial factor.  We leave
-a complete algebraic proof as an open problem; the numerical verification
-provides strong evidence for the result.
+\begin{remark}
+We have verified numerically that $U^3 = I_{16}$ to machine precision.
+An analytic characterization of this group structure---via the minimal
+polynomial of $U$ over $\F_2$, which divides $x^3 - 1 = (x-1)(x^2+x+1)$---
+is left for future work.
 \end{remark}
 
 % ─────────────────────────────────────────────────────────────────────────────
