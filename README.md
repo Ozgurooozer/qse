@@ -146,7 +146,7 @@ This library accompanies the paper:
 
 > **Quantum Stabilizer Entropy: Analytic von Neumann Entropy for CNOT-Based Circuits**  
 > via Walsh–Hadamard Transforms and F₂ Linear Algebra  
-> [Authors], [Year]. [arXiv link]
+> Özgür Özer, 2026. [arXiv link]
 
 The LaTeX source is in `arxiv_paper/qse_paper.tex`.
 
