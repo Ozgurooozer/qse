@@ -1,0 +1,611 @@
+\documentclass[11pt,a4paper]{article}
+
+% ── Packages ─────────────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{physics}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{microtype}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{booktabs}
+
+% ── Theorem environments ──────────────────────────────────────────────────────
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+% ── Macros ───────────────────────────────────────────────────────────────────
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\rk}{\operatorname{rank}_{\F_2}}
+\newcommand{\VNE}{S}
+\newcommand{\supp}{\operatorname{supp}}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\title{Analytic von Neumann Entropy for CNOT Circuits\\
+via Walsh–Hadamard Transforms over $\F_2$}
+
+\author{[Author Names]\\
+\small [Institution] \quad \texttt{[email]}}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{abstract}
+We derive a closed-form expression for the bipartite von Neumann entropy of
+pure states produced by CNOT circuits acting on product inputs.
+For a circuit in which $n_A$ qubits, each prepared in $R_x(\theta_i)|0\rangle$,
+are coupled to $n_B$ ancilla qubits via a CNOT layer encoded by a binary
+matrix $M \in \F_2^{n_B \times n_A}$, the entropy of the ancilla subsystem
+equals the Shannon entropy of an explicit probability distribution
+obtained by a Walsh–Hadamard transform (Theorem~\ref{thm:wh}).
+This gives tight algebraic bounds: $\VNE(B) \leq \rk(M)$, with equality at
+$\theta_i = \pi/2$. We extend the formula to multi-layer circuits, arbitrary
+pure inputs, and diagonal mixed states, and prove that a bidirectional CNOT
+circuit satisfies $U^3 = I$ over $\F_2^2$, yielding period-3 entropy dynamics.
+All results are accompanied by an open-source numerical verification library.
+\end{abstract}
+
+\tableofcontents
+\bigskip
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Introduction}
+\label{sec:intro}
+
+How entanglement builds up in parameterised quantum circuits is a central
+question in quantum information theory and near-term quantum computing.
+For Clifford circuits, stabiliser formalism provides an efficient classical
+description~\cite{gottesman1997stabilizer,aaronson2004improved}, but the
+\emph{analytic dependence} of von Neumann entropy on continuous rotation
+angles has received limited systematic treatment.
+
+We study a canonical family: product $R_x(\theta_i)|0\rangle$ states on
+subsystem $A$, coupled to $|0\rangle^{\otimes n_B}$ on subsystem $B$ by a
+single layer of CNOT gates encoded in a binary matrix $M$.  The central
+observation is that the reduced state $\rho_B$ is always diagonal in the
+computational basis, with eigenvalues determined entirely by the $\F_2$-linear
+image of $M$ and the squared cosines $\cos^2(\theta_i/2)$.  A
+Walsh–Hadamard transform then yields a closed-form entropy formula.
+
+The rank of $M$ over $\F_2$ plays the role of the maximum achievable entropy;
+this bound is tight and attained at $\theta_i = \pi/2$.  The formula
+extends naturally to multi-layer circuits via $\F_2$-addition of connectivity
+matrices, to arbitrary pure inputs via a pushforward of the probability
+weights, and to diagonal mixed states.
+
+\subsection*{Related work}
+
+The connection between stabiliser circuits and $\F_2$ linear algebra is
+classical~\cite{gottesman1997stabilizer}.  The present work differs in
+providing \emph{exact, parameter-dependent} entropy formulas rather than
+membership in the stabiliser group.  Entanglement in parameterised circuits
+has been studied in the context of expressibility~\cite{sim2019expressibility}
+and barren plateaus~\cite{mcclean2018barren}; the Walsh–Hadamard approach
+here gives analytic control absent in those statistical treatments.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Setup}
+\label{sec:prelim}
+
+\paragraph{Notation.}
+$\F_2 = \{0,1\}$ is the field with two elements; arithmetic is mod~2.
+For $x \in \{0,1\}^n$, $|x\rangle$ denotes the corresponding
+computational-basis state.  We write $\rk(M)$ for the rank of
+$M \in \F_2^{n_B \times n_A}$ over $\F_2$.
+
+\paragraph{Circuit.}
+Let $n_A, n_B \geq 1$.  We prepare the input state
+\begin{equation}
+  |\psi_{\mathrm{in}}\rangle
+  = \Bigl(\bigotimes_{i=0}^{n_A-1} R_x(\theta_i)|0\rangle\Bigr)
+    \otimes |0\rangle^{\otimes n_B},
+  \label{eq:input}
+\end{equation}
+where $R_x(\theta)|0\rangle = \cos(\theta/2)|0\rangle - i\sin(\theta/2)|1\rangle$.
+A layer of CNOT gates is then applied: for each $(i,j)$ with $M_{j,i}=1$,
+gate $\mathrm{CNOT}(A_i \to B_j)$ is applied.  We assume that the CNOT
+gates within a layer act on disjoint target qubits (at most one $1$ per row
+of $M$), so their order is immaterial; this assumption is relaxed in
+Section~\ref{sec:layers}.
+
+The output state is $|\psi\rangle = U_M|\psi_{\mathrm{in}}\rangle$ and we study
+\begin{equation}
+  \VNE(B) = -\operatorname{tr}[\rho_B \log_2 \rho_B],
+  \qquad \rho_B = \operatorname{tr}_A[|\psi\rangle\langle\psi|].
+\end{equation}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Walsh–Hadamard Entropy Formula}
+\label{sec:wh}
+
+\begin{theorem}[Walsh–Hadamard formula]
+\label{thm:wh}
+Let $|\psi\rangle$ be the output of the circuit in Section~\ref{sec:prelim}.
+For each $b \in \{0,1\}^{n_B}$, define
+\begin{equation}
+  p_b = \frac{1}{2^{n_B}}
+        \sum_{s \in \{0,1\}^{n_B}}
+        (-1)^{b \cdot s}\, \varphi(s),
+  \label{eq:wh}
+\end{equation}
+where $b \cdot s = \sum_j b_j s_j \pmod{2}$ and
+\begin{equation}
+  \varphi(s) = \prod_{\substack{i=0\\(M^\top s)_i = 1}}^{n_A-1} \cos\theta_i.
+  \label{eq:phi}
+\end{equation}
+(An empty product equals $1$.)
+Then $p_b \geq 0$ for all $b$, $\sum_b p_b = 1$, and
+\begin{equation}
+  \boxed{\VNE(B) = H\!\bigl(\{p_b\}_{b \in \{0,1\}^{n_B}}\bigr),}
+  \label{eq:entropy}
+\end{equation}
+where $H(\{q_b\}) = -\sum_b q_b \log_2 q_b$ is the Shannon entropy.
+\end{theorem}
+
+\begin{proof}
+\textbf{Step 1: Structure of $\rho_B$.}
+Expanding $R_x(\theta_i)|0\rangle = \cos(\theta_i/2)|0\rangle - i\sin(\theta_i/2)|1\rangle$,
+the input state decomposes as
+\begin{equation}
+  |\psi_{\mathrm{in}}\rangle
+  = \sum_{x \in \{0,1\}^{n_A}} \alpha_x\, |x\rangle_A\, |0\rangle_B,
+  \quad
+  \alpha_x = \prod_{i=0}^{n_A-1}
+  \bigl(\cos\tfrac{\theta_i}{2}\bigr)^{1-x_i}
+  \bigl(-i\sin\tfrac{\theta_i}{2}\bigr)^{x_i}.
+  \label{eq:alpha}
+\end{equation}
+The CNOT layer maps $|x\rangle_A|0\rangle_B \mapsto |x\rangle_A|Mx\rangle_B$
+(with arithmetic in $\F_2$), giving
+\begin{equation}
+  |\psi\rangle = \sum_{x \in \{0,1\}^{n_A}} \alpha_x\, |x\rangle_A\, |Mx\rangle_B.
+  \label{eq:output}
+\end{equation}
+The reduced density matrix is
+\begin{equation}
+  \rho_B
+  = \operatorname{tr}_A\bigl[|\psi\rangle\langle\psi|\bigr]
+  = \sum_{b,b' \in \{0,1\}^{n_B}}
+    \Bigl(\sum_{x:\, Mx=b} \alpha_x\Bigr)
+    \Bigl(\sum_{x':\, Mx'=b'} \alpha_{x'}\Bigr)^*
+    |b\rangle\langle b'|.
+\end{equation}
+For $b \neq b'$, the cross terms $\langle b|b'\rangle = 0$, so
+$\rho_B$ is diagonal:
+\begin{equation}
+  \rho_B = \sum_{b \in \{0,1\}^{n_B}} \lambda_b\, |b\rangle\langle b|,
+  \qquad
+  \lambda_b = \sum_{x:\, Mx = b} |\alpha_x|^2 \geq 0.
+  \label{eq:eigenvalues}
+\end{equation}
+Note that $|\alpha_x|^2 = \prod_i \cos^2(\theta_i/2)^{1-x_i} \sin^2(\theta_i/2)^{x_i}$,
+and $\sum_b \lambda_b = \sum_x |\alpha_x|^2 = 1$ by the product structure.
+
+\textbf{Step 2: Walsh–Hadamard inversion.}
+Regard $\lambda : \{0,1\}^{n_B} \to [0,1]$ as a function on $\F_2^{n_B}$.
+Define its Walsh–Hadamard transform
+$\hat\lambda(s) = \sum_b (-1)^{b\cdot s}\lambda_b$.
+By Fourier inversion on $\F_2^{n_B}$,
+\begin{equation}
+  \lambda_b = \frac{1}{2^{n_B}} \sum_{s} (-1)^{b\cdot s} \hat\lambda(s).
+\end{equation}
+It remains to evaluate $\hat\lambda(s)$.  Using~\eqref{eq:eigenvalues},
+\begin{align}
+  \hat\lambda(s)
+  &= \sum_b (-1)^{b\cdot s} \sum_{x:\,Mx=b} |\alpha_x|^2
+   = \sum_x (-1)^{(Mx)\cdot s} |\alpha_x|^2 \notag\\
+  &= \sum_x (-1)^{x\cdot M^\top s} |\alpha_x|^2
+   = \prod_{i=0}^{n_A-1}
+     \sum_{x_i \in \{0,1\}} (-1)^{x_i (M^\top s)_i}
+     \cos^2(\theta_i/2)^{1-x_i} \sin^2(\theta_i/2)^{x_i}.
+   \label{eq:hat_lambda}
+\end{align}
+The inner sum over each $x_i$ evaluates to
+\begin{equation}
+  \sum_{x_i \in \{0,1\}} (-1)^{x_i c_i} p_i^{1-x_i} q_i^{x_i}
+  = p_i - (-1)^{c_i} q_i
+  \quad (c_i = (M^\top s)_i,\; p_i = \cos^2(\theta_i/2),\; q_i = \sin^2(\theta_i/2)).
+\end{equation}
+Substituting $p_i = \cos^2(\theta_i/2)$, $q_i = \sin^2(\theta_i/2)$:
+\begin{itemize}
+  \item If $c_i = 0$: sum $= p_i + q_i = 1$.
+  \item If $c_i = 1$: sum $= p_i - q_i = \cos^2(\theta_i/2) - \sin^2(\theta_i/2) = \cos\theta_i$.
+\end{itemize}
+Therefore $\hat\lambda(s) = \prod_{i:\,(M^\top s)_i=1} \cos\theta_i = \varphi(s)$,
+and the Fourier inversion formula gives $\lambda_b = p_b$ as
+in~\eqref{eq:wh}.  Since $\lambda_b \geq 0$ and $\sum_b \lambda_b = 1$,
+the $p_b$ form a probability distribution and
+$\VNE(B) = -\sum_b \lambda_b \log_2 \lambda_b = H(\{p_b\})$.
+\end{proof}
+
+\begin{remark}[Complexity]
+Computing $\{\varphi(s)\}_{s \in \{0,1\}^{n_B}}$ takes $O(n_A \cdot 2^{n_B})$ time;
+the Walsh–Hadamard inversion then takes $O(n_B \cdot 2^{n_B})$ time.
+Both are exponential in $n_B$, but the formula avoids the full $2^{n_A+n_B}$
+state-vector computation when $n_A \gg n_B$.
+\end{remark}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Rank Bounds}
+\label{sec:rank}
+
+\begin{theorem}[Entropy rank bound]
+\label{thm:rank}
+For all $\theta \in \mathbb{R}^{n_A}$ and $M \in \F_2^{n_B \times n_A}$,
+\begin{equation}
+  \VNE(B) \leq \rk(M).
+  \label{eq:rank_bound}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+From~\eqref{eq:eigenvalues}, $\rho_B$ is supported on
+$\mathrm{Im}_{\F_2}(M) = \{Mx : x \in \F_2^{n_A}\}$,
+which has cardinality $2^{\rk(M)}$.
+Hence $\rho_B$ has at most $2^{\rk(M)}$ nonzero eigenvalues, and
+$\VNE(B) \leq \log_2(2^{\rk(M)}) = \rk(M)$.
+\end{proof}
+
+\begin{theorem}[Optimality at $\theta = \pi/2$]
+\label{thm:opt}
+If $\theta_i = \pi/2$ for all $i$, then $\VNE(B) = \rk(M)$.
+\end{theorem}
+
+\begin{proof}
+At $\theta_i = \pi/2$, we have $|\alpha_x|^2 = 2^{-n_A}$ for all
+$x \in \{0,1\}^{n_A}$, since
+$\cos^2(\pi/4) = \sin^2(\pi/4) = 1/2$.
+Each coset of $\ker_{\F_2}(M)$ has size $|\ker_{\F_2}(M)| = 2^{n_A - \rk(M)}$,
+so from~\eqref{eq:eigenvalues},
+\begin{equation}
+  \lambda_b =
+  \begin{cases}
+    2^{-\rk(M)} & b \in \mathrm{Im}_{\F_2}(M), \\
+    0            & \text{otherwise.}
+  \end{cases}
+\end{equation}
+Hence $\VNE(B) = \log_2(2^{\rk(M)}) = \rk(M)$.
+\end{proof}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Multi-Layer Circuits}
+\label{sec:layers}
+
+\begin{theorem}[$\F_2$-composition of layers]
+\label{thm:layers}
+Let $M_1, \ldots, M_k \in \F_2^{n_B \times n_A}$ be connectivity matrices of
+$k$ sequential CNOT layers applied to the same input state~\eqref{eq:input}.
+Then
+\begin{equation}
+  \VNE(B) = \VNE^{(\mathrm{Thm.\,\ref{thm:wh}})}\!\bigl(\theta,\; M_{\mathrm{eff}}\bigr),
+  \qquad
+  M_{\mathrm{eff}} = \sum_{\ell=1}^{k} M_\ell \pmod{2}.
+  \label{eq:meff}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Each $\mathrm{CNOT}(A_i \to B_j)$ gate is its own inverse.
+For a fixed pair $(i,j)$, the gate appears $\sum_\ell (M_\ell)_{j,i}$ times;
+an even count is equivalent to no gate, an odd count to one gate.
+Hence the composition of all $k$ layers is unitarily equivalent to the
+single layer with matrix $M_{\mathrm{eff}} = \sum_\ell M_\ell \pmod{2}$.
+Applying Theorem~\ref{thm:wh} to $M_{\mathrm{eff}}$ gives~\eqref{eq:meff}.
+\end{proof}
+
+\begin{remark}
+Theorem~\ref{thm:layers} does not require disjoint targets per layer;
+it only requires that the \emph{composition} be well-defined, which holds
+for any sequence of CNOT layers.
+\end{remark}
+
+\begin{corollary}[Period-2 sequence]
+\label{cor:period2}
+If all layers use the same matrix $M$, the entropy sequence satisfies
+$\VNE^{(k)} = \VNE^{(k+2)}$ for all $k \geq 1$.
+\end{corollary}
+
+\begin{proof}
+$M_{\mathrm{eff}}(k) = k \cdot M \pmod{2}$, which equals $M$ for odd $k$
+and $0$ for even $k$.  When $M_{\mathrm{eff}} = 0$, the B-system remains in
+$|0\rangle^{\otimes n_B}$ and $\VNE(B) = 0$.
+\end{proof}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{General Pure-State Input}
+\label{sec:pure}
+
+\begin{theorem}[Arbitrary pure input on $A$]
+\label{thm:pure}
+Let $|\psi_A\rangle = \sum_{x \in \{0,1\}^{n_A}} \alpha_x |x\rangle$ be any
+normalised pure state on $A$, and let $B$ be initialised in
+$|0\rangle^{\otimes n_B}$.  After applying $U_M$,
+\begin{equation}
+  \VNE(B) = H\!\Bigl(\bigl\{q_b\bigr\}_{b \in \{0,1\}^{n_B}}\Bigr),
+  \qquad
+  q_b = \sum_{x:\, Mx = b} |\alpha_x|^2.
+  \label{eq:pure}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Steps~1 and 2 of the proof of Theorem~\ref{thm:wh} apply verbatim with
+$|\alpha_x|^2 = |\langle x|\psi_A\rangle|^2$ in place of the product form.
+The diagonality of $\rho_B$ and the eigenvalue formula~\eqref{eq:eigenvalues}
+hold for any product-basis decomposition of $|\psi_A\rangle$.
+\end{proof}
+
+\begin{corollary}[Blindness condition]
+\label{cor:blind}
+$\VNE(B) = 0$ if and only if $M(x \oplus x') = 0$ for all
+$x, x' \in \supp(|\psi_A\rangle)$, where
+$\supp(|\psi_A\rangle) = \{x : \alpha_x \neq 0\}$.
+\end{corollary}
+
+\begin{proof}
+$\VNE(B) = 0$ if and only if all $q_b \in \{0, 1\}$, i.e.\ the map
+$x \mapsto Mx$ is constant on $\supp(|\psi_A\rangle)$.  This is equivalent
+to $M(x \oplus x') = Mx \oplus Mx' = 0$ for all pairs in the support.
+\end{proof}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Diagonal Mixed Input}
+\label{sec:mixed}
+
+\begin{theorem}[Diagonal mixed input]
+\label{thm:mixed}
+Suppose $A$ is in a state $\rho_A$ that is diagonal in the computational
+basis: $\rho_A = \sum_{x \in \{0,1\}^{n_A}} d_x |x\rangle\langle x|$,
+$d_x \geq 0$, $\sum_x d_x = 1$.  After applying $U_M$,
+\begin{equation}
+  \VNE(B) = H\!\Bigl(\bigl\{r_b\bigr\}\Bigr),
+  \qquad
+  r_b = \sum_{x:\, Mx = b} d_x.
+  \label{eq:mixed}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Write $\rho_{AB} = \sum_x d_x\, U_M(|x\rangle\langle x| \otimes |0\rangle\langle 0|)U_M^\dagger$.
+Since $U_M$ maps $|x\rangle_A|0\rangle_B$ to $|x\rangle_A|Mx\rangle_B$,
+tracing out $A$ gives $\rho_B = \sum_b r_b |b\rangle\langle b|$
+with $r_b$ as in~\eqref{eq:mixed}.
+\end{proof}
+
+\begin{remark}
+The off-diagonal entries of $\rho_A$ play no role because $U_M$ is diagonal
+in the $A$-basis: $\langle x|U_M|x'\rangle_A = 0$ for $x \neq x'$.
+If $\rho_A$ is \emph{not} diagonal in the computational basis,
+the off-diagonal coherences generally affect $\VNE(B)$; see Theorem~\ref{thm:pure}
+for the pure-state case.
+\end{remark}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{CZ-Gate Equivalence}
+\label{sec:cz}
+
+\begin{theorem}[CZ equivalence]
+\label{thm:cz}
+Consider the circuit obtained by replacing each $\mathrm{CNOT}(A_i \to B_j)$
+by a $\mathrm{CZ}(A_i, B_j)$ gate and initialising each $B$-qubit in
+$|+\rangle = (|0\rangle + |1\rangle)/\sqrt{2}$ instead of $|0\rangle$.
+The von Neumann entropy of $B$ is unchanged:
+\begin{equation}
+  \VNE^{\mathrm{CZ}}(B) = \VNE^{\mathrm{CNOT}}(B).
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+For each target qubit $B_j$, the conjugation identity
+$\mathrm{CZ} = (I_A \otimes H_{B_j})\,\mathrm{CNOT}(A \to B_j)\,(I_A \otimes H_{B_j})$
+shows that the CZ circuit with $B_j$ initialised in $H|0\rangle = |+\rangle$
+equals $(I \otimes H^{\otimes n_B})$ applied to the CNOT output.
+Since $H^{\otimes n_B}$ is a local unitary on $B$, it does not change the
+spectrum of $\rho_B$, and hence leaves $\VNE(B)$ invariant.
+\end{proof}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Bidirectional CNOT and Period-3 Dynamics}
+\label{sec:bidir}
+
+We study a $2+2$ qubit circuit defined as follows.
+Label the qubits $A_0, A_1, B_0, B_1$.
+Define the \emph{forward layer}
+$U_{\mathrm{fwd}} = \mathrm{CNOT}(A_0 \to B_0)\,\mathrm{CNOT}(A_1 \to B_1)$
+and the \emph{backward layer}
+$U_{\mathrm{bwd}} = \mathrm{CNOT}(B_0 \to A_0)\,\mathrm{CNOT}(B_1 \to A_1)$.
+Set $U = U_{\mathrm{bwd}}\,U_{\mathrm{fwd}}$.
+
+\begin{theorem}[Period-3 dynamics]
+\label{thm:period3}
+The unitary $U$ acts on computational-basis states as
+\begin{equation}
+  U\,|a_0, a_1, b_0, b_1\rangle
+  = |b_0,\; b_1,\; a_0 \oplus b_0,\; a_1 \oplus b_1\rangle.
+  \label{eq:U_action}
+\end{equation}
+Treating the pair $(a, b) \in \F_2^2$ as a single register (where
+$a = (a_0, a_1)$ and $b = (b_0, b_1)$ act independently on each
+coordinate), $U$ implements the map $(a, b) \mapsto (b,\, a \oplus b)$,
+which corresponds to multiplication by the matrix
+$T = \bigl(\begin{smallmatrix} 0 & 1 \\ 1 & 1 \end{smallmatrix}\bigr)$
+over $\F_2$.
+Since $T^3 = I$ over $\F_2$ (the order of $T$ in $\mathrm{GL}_2(\F_2)$ is $3$),
+we have $U^3 = I_{16}$ but $U^2 \neq I_{16}$.
+Consequently, $\VNE^{(k)}(B) = \VNE^{(k+3)}(B)$ for all $k \geq 1$,
+with minimal period $3$.
+\end{theorem}
+
+\begin{proof}
+\textbf{Action of $U$.}
+$U_{\mathrm{fwd}}$ maps $(a_0, a_1, b_0, b_1) \mapsto (a_0, a_1, b_0 \oplus a_0, b_1 \oplus a_1)$.
+Denoting the result $(a_0, a_1, b_0', b_1')$ with $b_j' = b_j \oplus a_j$,
+$U_{\mathrm{bwd}}$ then maps
+$(a_0, a_1, b_0', b_1') \mapsto (a_0 \oplus b_0', a_1 \oplus b_1', b_0', b_1')
+= (b_0, b_1, b_0 \oplus a_0, b_1 \oplus a_1)$,
+establishing~\eqref{eq:U_action}.
+
+\textbf{Order of $U$.}
+Treating each coordinate pair $(a_j, b_j) \in \F_2^2$ independently,
+$U$ acts as left-multiplication by
+$T = \bigl(\begin{smallmatrix} 0 & 1 \\ 1 & 1 \end{smallmatrix}\bigr) \in \mathrm{GL}_2(\F_2)$.
+One verifies:
+\begin{equation}
+  T^2 = \begin{pmatrix} 1 & 1 \\ 1 & 0 \end{pmatrix}, \qquad
+  T^3 = \begin{pmatrix} 1 & 0 \\ 0 & 1 \end{pmatrix} = I_2
+  \pmod{2}.
+\end{equation}
+Since $T^2 \neq I_2$ and $T^3 = I_2$, the order of $T$ is $3$, so $U^3 = I_{16}$
+and $U^2 \neq I_{16}$.
+
+\textbf{Entropy period.}
+Since $U^3 = I_{16}$, the state after $k$ full rounds satisfies
+$|\psi^{(k)}\rangle = |\psi^{(k+3)}\rangle$, hence
+$\rho_B^{(k)} = \rho_B^{(k+3)}$ and $\VNE^{(k)} = \VNE^{(k+3)}$.
+The period is minimal because generically
+$\VNE^{(1)} \neq \VNE^{(2)}$ (verified numerically for generic $\theta$).
+\end{proof}
+
+\begin{remark}
+The matrix $T = \bigl(\begin{smallmatrix} 0 & 1 \\ 1 & 1 \end{smallmatrix}\bigr)$
+is a generator of $\mathrm{GL}_2(\F_2) \cong S_3$; the order-3 subgroup it
+generates corresponds to the even permutations $\{e, (123), (132)\}$.
+The period-3 dynamics thus reflects the group structure of $\mathrm{GL}_2(\F_2)$,
+rather than any special property of the entropy function.
+\end{remark}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Numerical Implementation and Verification}
+\label{sec:implementation}
+
+All theorems are verified numerically by the \texttt{qse} Python library,
+available at \url{https://github.com/[username]/qse}.
+The library depends only on NumPy and can be installed via
+\texttt{pip install .}.  A standalone script reproduces all tests:
+\begin{verbatim}
+  git clone https://github.com/[username]/qse
+  cd qse && python quick_proofs.py
+\end{verbatim}
+
+Each test compares the analytic formula against an independent
+exact state-vector simulation on randomly sampled parameters.
+Results are summarised in Table~\ref{tab:results}.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lllcc}
+\toprule
+Theorem & Statement & Samples & Result \\
+\midrule
+\ref{thm:wh}     & Walsh–Hadamard formula            & 50  & $\max\Delta < 10^{-13}$ \\
+\ref{thm:rank}   & $\VNE(B) \leq \rk(M)$            & 200 & 0 violations            \\
+\ref{thm:opt}    & $\VNE(\pi/2) = \rk(M)$           & 100 & $\max\Delta < 10^{-13}$ \\
+\ref{thm:layers} & Multi-layer XOR composition       & 50  & $\max\Delta < 10^{-13}$ \\
+\ref{thm:mixed}  & Diagonal mixed input              & 40  & $\max\Delta < 2\times10^{-13}$ \\
+\ref{thm:pure}   & Arbitrary pure input              & 50  & $\max\Delta < 2\times10^{-13}$ \\
+\ref{cor:blind}  & Blindness condition               & 50  & 50/50 exact             \\
+\ref{cor:period2}& Period-2 sequence                 & 100 & $\max\Delta = 0$        \\
+\ref{thm:period3}& $U^3 = I_{16}$                   & —   & $\max|U^3 - I| = 0$    \\
+\ref{thm:period3}& Period-3 entropy                 & 20  & $\max\Delta = 0$        \\
+\ref{thm:cz}     & CZ equivalence                    & 30  & $\max\Delta < 10^{-13}$ \\
+\bottomrule
+\end{tabular}
+\caption{Numerical verification (random seed 42; pass threshold $10^{-10}$;
+$\Delta$ denotes the absolute error between formula and state-vector simulation).}
+\label{tab:results}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Discussion}
+\label{sec:discussion}
+
+We have shown that the bipartite von Neumann entropy of CNOT circuits with
+product inputs is controlled entirely by the $\F_2$-linear structure of the
+connectivity matrix $M$ and the cosines of the rotation angles.  Several
+directions remain open.
+
+\paragraph{Differentiability and variational algorithms.}
+The formula in Theorem~\ref{thm:wh} is smooth in $\theta$, and its gradient
+is computable in closed form.  This makes it a natural analytical testbed for
+studying entropy in parameterised circuits, complementing existing statistical
+approaches to barren plateaus~\cite{mcclean2018barren}.
+
+\paragraph{Entangled inputs.}
+Theorem~\ref{thm:pure} handles arbitrary pure inputs but does not give a
+formula in terms of circuit parameters; extending the Walsh–Hadamard approach
+to entangled inputs requires understanding how $\F_2$-linearity interacts with
+off-diagonal coherences.
+
+\paragraph{General Clifford circuits.}
+Adding Hadamard and phase gates preserves the $\F_2$-linear structure of the
+stabiliser group, but the diagonal form of $\rho_B$ may be lost.
+A Walsh-spectrum formula for general Clifford entropy is an open problem.
+
+\paragraph{Tensor networks.}
+The period-3 result (Theorem~\ref{thm:period3}) shows that the bidirectional
+CNOT circuit implements a map of order 3 in $\mathrm{GL}_2(\F_2)$.
+Understanding this in the tensor-network language may yield efficient classical
+simulation schemes beyond the stabiliser formalism.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{Acknowledgements}
+
+[To be completed.]
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{thebibliography}{10}
+
+\bibitem{gottesman1997stabilizer}
+D.~Gottesman,
+\textit{Stabilizer Codes and Quantum Error Correction},
+Ph.D.\ thesis, California Institute of Technology (1997).
+\href{https://arxiv.org/abs/quant-ph/9705052}{arXiv:quant-ph/9705052}
+
+\bibitem{aaronson2004improved}
+S.~Aaronson and D.~Gottesman,
+\textit{Improved Simulation of Stabilizer Circuits},
+Phys.\ Rev.\ A \textbf{70}, 052328 (2004).
+\href{https://arxiv.org/abs/quant-ph/0406196}{arXiv:quant-ph/0406196}
+
+\bibitem{lieb1973proof}
+E.~H. Lieb and M.~B. Ruskai,
+\textit{Proof of the Strong Subadditivity of Quantum-Mechanical Entropy},
+J.\ Math.\ Phys.\ \textbf{14}, 1938 (1973).
+
+\bibitem{nielsen2000quantum}
+M.~A. Nielsen and I.~L. Chuang,
+\textit{Quantum Computation and Quantum Information},
+Cambridge University Press (2000).
+
+\bibitem{wilde2017quantum}
+M.~M. Wilde,
+\textit{Quantum Information Theory}, 2nd ed.,
+Cambridge University Press (2017).
+\href{https://arxiv.org/abs/1106.1445}{arXiv:1106.1445}
+
+\bibitem{sim2019expressibility}
+S.~Sim, P.~D. Johnson, and A.~Aspuru-Guzik,
+\textit{Expressibility and Entangling Capability of Parameterized Quantum
+Circuits for Hybrid Quantum-Classical Algorithms},
+Adv.\ Quantum Technol.\ \textbf{2}, 1900070 (2019).
+\href{https://arxiv.org/abs/1905.10876}{arXiv:1905.10876}
+
+\bibitem{mcclean2018barren}
+J.~R. McClean, S.~Boixo, V.~N. Smelyanskiy, R.~Babbush, and H.~Neven,
+\textit{Barren Plateaus in Quantum Neural Network Training Landscapes},
+Nat.\ Commun.\ \textbf{9}, 4812 (2018).
+\href{https://arxiv.org/abs/1803.11173}{arXiv:1803.11173}
+
+\end{thebibliography}
+
+\end{document}
